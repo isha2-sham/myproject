@@ -12,6 +12,7 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -29,27 +30,35 @@ pipeline {
 
         stage('Push to Docker Hub') {
             steps {
-                sh "echo ${DOCKER_HUB_CREDENTIALS_PSW} | docker login -u ${DOCKER_HUB_CREDENTIALS_USR} --password-stdin"
-                sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
-                sh "docker push ${DOCKER_IMAGE}:latest"
-                echo "Image pushed ✅"
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                    sh "docker push ${DOCKER_IMAGE}:latest"
+                    echo "Image pushed to Docker Hub ✅"
+                }
             }
         }
 
-       
-    stage('Deploy') {
-    steps {
-        sh '''
-            cd /home/isha/myproject
-            docker compose down || true
-            docker compose up -d
-        '''
-        echo "App deployed ✅"
+        stage('Deploy') {
+            steps {
+                sh '''
+                    cd /home/isha/myproject
+                    docker compose down || true
+                    docker compose up -d
+                    docker ps
+                '''
+                echo "App deployed ✅"
+            }
+        }
     }
-}
+
     post {
         success {
-            echo "✅ Build #${env.BUILD_NUMBER} successful!"
+            echo "✅ Build #${env.BUILD_NUMBER} deployed successfully!"
         }
         failure {
             echo "❌ Build #${env.BUILD_NUMBER} failed!"
