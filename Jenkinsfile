@@ -36,18 +36,17 @@ pipeline {
             }
         }
 
-       stage('Deploy') {
+       
+    stage('Deploy') {
     steps {
         sh '''
-            cd /var/lib/jenkins/workspace/two\\ -tier-app
+            cd /home/isha/myproject
             docker compose down || true
             docker compose up -d
-            docker ps
         '''
         echo "App deployed ✅"
     }
 }
-
     post {
         success {
             echo "✅ Build #${env.BUILD_NUMBER} successful!"
