@@ -6,3 +6,4 @@ polling test
 test
 test poll
 test poll
+# auto trigger test
