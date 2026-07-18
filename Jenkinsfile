@@ -43,22 +43,26 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to EC2') {
             steps {
-                sh '''
-                    cd /home/isha/myproject
-                    docker compose down || true
-                    docker compose up -d
-                    docker ps
-                '''
-                echo "App deployed ✅"
+                sshagent(['ec2-ssh-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ubuntu@65.1.91.229 '
+                            cd /home/ubuntu/myproject &&
+                            git pull origin main &&
+                            docker-compose down || true &&
+                            docker-compose up -d --build
+                        '
+                    """
+                }
+                echo "Deployed to EC2 ✅"
             }
         }
     }
 
     post {
         success {
-            echo "✅ Build #${env.BUILD_NUMBER} deployed successfully!"
+            echo "✅ Build #${env.BUILD_NUMBER} deployed to EC2 successfully!"
         }
         failure {
             echo "❌ Build #${env.BUILD_NUMBER} failed!"
